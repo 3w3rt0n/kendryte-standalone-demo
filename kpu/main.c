@@ -15,6 +15,8 @@
 #include "plic.h"
 #include "sysctl.h"
 #include "uarths.h"
+#include "uart.h"
+#include "gpiohs.h"
 #include "nt35310.h"
 #include "utils.h"
 #include "kpu.h"
@@ -24,6 +26,12 @@
 #define PLL0_OUTPUT_FREQ 800000000UL
 #define PLL1_OUTPUT_FREQ 400000000UL
 
+#define RECV_LENTH  4
+
+#define CLOSLIGHT   0x55555555
+#define OPENLIGHT   0xAAAAAAAA
+
+#define UART_NUM    UART_DEVICE_3
 #define CLASS_NUMBER 20
 
 kpu_task_t task;
@@ -49,6 +57,19 @@ float g_anchor[ANCHOR_NUM * 2] = {1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.1
 volatile uint8_t g_dvp_finish_flag = 0;
 volatile uint8_t g_ram_mux = 0;
 
+int release_cmd(char *cmd)
+{
+    switch(*((int *)cmd)){
+        case CLOSLIGHT:
+        gpiohs_set_pin(3, GPIO_PV_LOW);
+        break;
+        case OPENLIGHT:
+        gpiohs_set_pin(3, GPIO_PV_HIGH);
+        break;
+    }
+    return 0;
+}
+
 static int on_irq_dvp(void* ctx)
 {
     if (dvp_get_interrupt(DVP_STS_FRAME_FINISH))
@@ -72,6 +93,9 @@ static int on_irq_dvp(void* ctx)
 #if BOARD_LICHEEDAN
 static void io_mux_init(void)
 {
+    fpioa_set_function(4, FUNC_UART1_RX + UART_NUM * 2);
+    fpioa_set_function(5, FUNC_UART1_TX + UART_NUM * 2);
+    fpioa_set_function(24, FUNC_GPIOHS3);
     /* Init DVP IO map and function settings */
     fpioa_set_function(42, FUNC_CMOS_RST);
     fpioa_set_function(44, FUNC_CMOS_PWDN);
@@ -201,6 +225,24 @@ static void drawboxes(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32
 #endif
 }
 
+static void send_data(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t class, float prob)
+{
+    if (x1 >= 320)
+        x1 = 319;
+    if (x2 >= 320)
+        x2 = 319;
+    if (y1 >= 240)
+        y1 = 239;
+    if (y2 >= 240)
+        y2 = 239;
+
+   char data[4];
+   int n;
+   n = sprintf(data, "%d\n", class);
+   uart_send_data(UART_NUM, &data, 4);
+
+}
+
 int main(void)
 {
     /* Set CPU and dvp clk */
@@ -283,6 +325,16 @@ int main(void)
     detect_rl.nms_value = 0.3;
     region_layer_init(&detect_rl, &task);
 
+    gpiohs_set_drive_mode(3, GPIO_DM_OUTPUT);
+    gpio_pin_value_t value = GPIO_PV_HIGH;
+    gpiohs_set_pin(3, value);
+
+    uart_init(UART_NUM);
+    uart_configure(UART_NUM, 115200, 8, UART_STOP_1, UART_PARITY_NONE);
+
+    char *hel = {"hello world!\n"};
+    uart_send_data(UART_NUM, hel, strlen(hel));
+
     while (1)
     {
         /* dvp finish*/
@@ -304,6 +356,7 @@ int main(void)
 
         /* draw boxs */
         region_layer_draw_boxes(&detect_rl, drawboxes);
+        region_layer_write_to_uart(&detect_rl, send_data);
     }
 
     return 0;

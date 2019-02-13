@@ -51,5 +51,6 @@ int region_layer_init(region_layer_t *rl, kpu_task_t *task);
 void region_layer_deinit(region_layer_t *rl);
 void region_layer_run(region_layer_t *rl, obj_info_t *obj_info);
 void region_layer_draw_boxes(region_layer_t *rl, callback_draw_box callback);
+void region_layer_write_to_uart(region_layer_t *rl, callback_draw_box callback);
 
 #endif // _REGION_LAYER

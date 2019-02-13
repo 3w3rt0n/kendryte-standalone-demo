@@ -2,6 +2,10 @@
 #include <math.h>
 #include <stdio.h>
 #include "region_layer.h"
+#include "uarths.h"
+#include "uart.h"
+#include <string.h>
+#define UART_NUM    UART_DEVICE_3
 
 typedef struct
 {
@@ -425,3 +429,27 @@ void region_layer_draw_boxes(region_layer_t *rl, callback_draw_box callback)
     }
 }
 
+
+void region_layer_write_to_uart(region_layer_t *rl, callback_draw_box callback)
+{
+    uint32_t image_width = rl->image_width;
+    uint32_t image_height = rl->image_height;
+    float threshold = rl->threshold;
+    box_t *boxes = (box_t *)rl->boxes;
+
+    for (int i = 0; i < rl->boxes_number; ++i)
+    {
+        int class  = max_index(rl->probs[i], rl->classes);
+        float prob = rl->probs[i][class];
+
+        if (prob > threshold)
+        {
+            box_t *b = boxes + i;
+            uint32_t x1 = b->x * image_width - (b->w * image_width / 2);
+            uint32_t y1 = b->y * image_height - (b->h * image_height / 2);
+            uint32_t x2 = b->x * image_width + (b->w * image_width / 2);
+            uint32_t y2 = b->y * image_height + (b->h * image_height / 2);
+            callback(x1, y1, x2, y2, class, prob);
+        }
+    }
+}

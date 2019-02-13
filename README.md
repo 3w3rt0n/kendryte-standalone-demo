@@ -1,11 +1,5 @@
-Kendryte Standalone SDK Demos
-======
+Forked from kendryte-standalone-demo repo
 
-This repo intends to offer *Kendryte Standalone SDK* demos to make you easy to develop projects with *Kendyrte K210*. All demos are suitable for the **master** branch of latest corresponding SDK.
+Added UART data transmission to KPU 20 class detection. Transmits the detected object class number over UART(Baud 115200, TX 5 RX 4).
 
-Licenses are separately specified for each demo, and will not be updated on *README.md* in this repo.
-
-We are continuing to add and update demos(including add comments and usages), please consider *watch* this repo.
-
-## Caveat
-This repo may iterate rapidly, please be careful to use them in production project directly.
+Added sample code for Arduino mega(which prints object name on Serial) and Raspberry PI(speaks the objects out loud with flite TTS).

@@ -6,4 +6,4 @@ Added sample code for Arduino mega(which prints object name on Serial) and Raspb
 
 Included pre-built binary, which you can upload to K210 with the following command on Linux
 
-sudo python3 isp_auto.py -d /dev/ttyUSB0 -b 200000 kpu_bin.bin
+sudo python3 kflash.py -t kpu.bin
